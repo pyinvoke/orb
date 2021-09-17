@@ -39,6 +39,15 @@ commands:
             - run: pip install pip==21.0.1
           pkg-manager: pip
           pip-dependency-file: dev-requirements.txt
+  debug:
+    steps:
+      - run:
+          name: Debug hold...
+          # Sleep for a very long time on failure, if opt-in env var set.
+          # Necessary to keep circleci cli from nuking its containers :weary:
+          command: "if test -n $DEBUG; then echo 'Go find that docker container I guess'; sleep 18000; fi"
+          when: on_fail
+          no_output_timeout: 5h
 
 
 jobs:
@@ -53,24 +62,28 @@ jobs:
     steps:
       - setup
       - run: inv test
+      - debug
 
   coverage:
     executor: default
     steps:
       - setup
       - run: inv coverage --codecov
+      - debug
 
   lint:
     executor: default
     steps:
       - setup
       - run: flake8
+      - debug
 
   format:
     executor: default
     steps:
       - setup
       - run: inv blacken --check --diff
+      - debug
 
   test-release:
     executor: default
@@ -78,3 +91,4 @@ jobs:
       - setup
       - run:
           command: inv release.all --dry-run
+      - debug
