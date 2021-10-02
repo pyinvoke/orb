@@ -46,7 +46,7 @@ commands:
           # Sleep for a very long time on failure, if opt-in env var set.
           # Necessary to keep circleci cli from nuking its containers :weary:
           # TODO: some non super nested way to get actual python version in use
-          command: "if test -n $DEBUG; then echo 'docker exec -it $(docker container ls --filter ancestor=cimg/python:3.6 --format \"{{.ID}}\") bash'; sleep 18000; fi"
+          command: "if test -n \"$DEBUG\"; then echo 'docker exec -it $(docker container ls --filter ancestor=cimg/python:3.6 --format \"{{.ID}}\") bash'; sleep 18000; fi"
           when: on_fail
           no_output_timeout: 5h
 
