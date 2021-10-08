@@ -74,11 +74,8 @@ jobs:
       - when:
           condition: "<< parameters.pip-overrides >>"
           steps:
-            - python/install-packages:
-                include-python-in-cache-key: false
-                pkg-manager: pip
-                pip-dependency-file: ""  # to force skip of -r flag
-                args: "<< parameters.pip-overrides >>"
+            # NOTE: eschewing python orb install-packages here, overkill/buggy
+            - run: "pip install << parameters.pip-overrides >>"
       - run: inv test
       - debug
 
