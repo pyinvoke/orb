@@ -104,6 +104,5 @@ jobs:
     executor: default
     steps:
       - setup
-      - run:
-          command: inv release.all --dry-run
+      - run: inv release.all --dry-run
       - debug
