@@ -55,13 +55,27 @@ jobs:
 
   test:
     parameters:
+      # Python interpreter version
       version:
         type: string
+      # Optional 'pip install' argstr for post-setup package tweaking,
+      # eg 'some-dependency==some-older-version test-dep==better-for-circle'
+      pip-overrides:
+        type: string
+        default: "" # evaluates falsey
     executor:
       name: default
       version: "<< parameters.version >>"
     steps:
       - setup
+      - when:
+          condition: "<< parameters.pip-overrides >>"
+          steps:
+            - python/install-packages:
+                include-python-in-cache-key: false
+                pkg-manager: pip
+                pip-dependency-file: ""  # to force skip of -r flag
+                args: "<< parameters.pip-overrides >>"
       - run: inv test
       - debug
 
