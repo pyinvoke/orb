@@ -106,3 +106,10 @@ jobs:
       - setup
       - run: inv release.all --dry-run
       - debug
+
+  docs:
+    executor: default
+    steps:
+      - setup
+      - run: inv sites
+      - debug
