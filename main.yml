@@ -109,7 +109,11 @@ jobs:
 
   docs:
     executor: default
+    parameters:
+      task:
+        type: string
+        default: "sites"  # build www+docs
     steps:
       - setup
-      - run: inv sites
+      - run: "inv << parameters.task >>"
       - debug
