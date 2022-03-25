@@ -25,6 +25,7 @@ executors:
 
 
 commands:
+
   setup:
     steps:
       - checkout
@@ -42,6 +43,8 @@ commands:
             - run: pip install pip==21.0.1
           pkg-manager: pip
           pip-dependency-file: dev-requirements.txt
+
+  # "Wait around on errors" helper for circleci-cli local use
   debug:
     steps:
       - run:
@@ -52,6 +55,15 @@ commands:
           command: "test -z \"$DEBUG\" || (\n\n###### RUN vvvv LOCALLY LMAO\n# docker exec -it $(docker container ls --filter ancestor=cimg/python:3.6 --format \"{{.ID}}\") bash\n######\n\nsleep 18000)"
           when: on_fail
           no_output_timeout: 5h
+
+  # Test+coverage+codecov, for test suites that need sudo
+  # (allows running tests under sudo-capable user but performing final
+  # report+upload as default user)
+  sudo-coverage:
+    steps:
+      - run: inv ci.sudo-run 'inv coverage'
+      - run: coverage xml
+      - run: codecov
 
 
 jobs:
@@ -79,6 +91,7 @@ jobs:
       - run: inv test
       - debug
 
+  # Regular tests+coverage+codecov upload
   coverage:
     executor: default
     steps:
