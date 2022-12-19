@@ -78,6 +78,10 @@ jobs:
       pip-overrides:
         type: string
         default: "" # evaluates falsey
+      # For easier running eg integration tests w/ matrix-friendly setup
+      task:
+        type: string
+        default: "test"
     executor:
       name: default
       version: "<< parameters.version >>"
@@ -88,7 +92,7 @@ jobs:
           steps:
             # NOTE: eschewing python orb install-packages here, overkill/buggy
             - run: "pip install << parameters.pip-overrides >>"
-      - run: inv test
+      - run: "inv << parameters.task >>"
       - debug
 
   # Regular tests+coverage+codecov upload
