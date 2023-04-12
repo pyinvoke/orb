@@ -3,6 +3,7 @@ version: 2.1
 
 orbs:
   python: circleci/python@1.4.0
+  codecov: codecov/codecov@3.2.4
 
 
 executors:
@@ -63,7 +64,7 @@ commands:
     steps:
       - run: inv ci.sudo-run 'inv coverage'
       - run: coverage xml
-      - run: codecov
+      - codecov/upload
 
 
 jobs:
@@ -100,7 +101,9 @@ jobs:
     executor: default
     steps:
       - setup
-      - run: inv coverage --codecov
+      - run: inv coverage
+      - run: coverage xml
+      - codecov/upload
       - debug
 
   lint:
