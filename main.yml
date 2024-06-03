@@ -9,13 +9,12 @@ orbs:
 executors:
   # Basically extending what the python orb's executor does:
   # - s/tag/version/
-  # - default to 3.6, not 3.8 or w/e
   # - set common environment vars
   default:
     parameters:
       version:
         type: string
-        default: "3.6"
+        default: "3.8"
     docker:
       - image: cimg/python:<< parameters.version >>
       # TODO: explicitly select 'resource_class: small' if credits ever become
