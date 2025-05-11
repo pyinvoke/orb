@@ -9,13 +9,13 @@ orbs:
 executors:
   # Basically extending what the python orb's executor does:
   # - s/tag/version/
-  # - default to 3.6, not 3.8 or w/e
+  # - default to 3.7
   # - set common environment vars
   default:
     parameters:
       version:
         type: string
-        default: "3.6"
+        default: "3.7"
     docker:
       - image: cimg/python:<< parameters.version >>
       # TODO: explicitly select 'resource_class: small' if credits ever become
@@ -34,7 +34,7 @@ commands:
       # - kinda hard to use invocations if it's not installed yet...
       # - the python orb is fully integrated with Circle's caching stuff
       - python/install-packages:
-          # For now, we expect most Pythons 3.6-3.9+ to be happy with the
+          # For now, we expect most Pythons 3.7-3.9+ to be happy with the
           # same pile of dependencies, so this lets us reuse the cache
           # across matrix cells.
           include-python-in-cache-key: false
@@ -53,7 +53,7 @@ commands:
           # Sleep for a very long time on failure, if opt-in env var set.
           # Necessary to keep circleci cli from nuking its containers :weary:
           # TODO: some non super nested way to get actual python version in use
-          command: "test -z \"$DEBUG\" || (\n\n###### RUN vvvv LOCALLY LMAO\n# docker exec -it $(docker container ls --filter ancestor=cimg/python:3.6 --format \"{{.ID}}\") bash\n######\n\nsleep 18000)"
+          command: "test -z \"$DEBUG\" || (\n\n###### RUN vvvv LOCALLY LMAO\n# docker exec -it $(docker container ls --filter ancestor=cimg/python:3.7 --format \"{{.ID}}\") bash\n######\n\nsleep 18000)"
           when: on_fail
           no_output_timeout: 5h
 
