@@ -41,7 +41,7 @@ commands:
           pre-install-steps:
             # This must occur here and not as a regular step; otherwise
             # cache loading stomps all over it and you get broken pip.
-            - run: pip install pip==21.3.1
+            - run: pip install pip==24.0
           pkg-manager: pip
           pip-dependency-file: dev-requirements.txt
 
