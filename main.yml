@@ -22,6 +22,12 @@ executors:
       # too tight; seems like small uses 5 credits/min and medium, the default,
       # uses 10
     environment:
+      # Don't use the Python user site-packages; one is pre-populated by CI (at
+      # least, as of 2025ish?) and will cause the "real" site-packages to omit
+      # those packages, leading to subtle problems with subshells (like when
+      # using sudo).
+      PYTHONNOUSERSITE: "1"
+      # So we get pretty output for some subcommands.
       TERM: screen-256color
 
 
