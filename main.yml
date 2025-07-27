@@ -2,20 +2,22 @@ version: 2.1
 
 
 orbs:
-  python: circleci/python@1.4.0
+  python: circleci/python@3.1.0
   codecov: codecov/codecov@3.2.4
 
 
 executors:
   # Basically extending what the python orb's executor does:
   # - s/tag/version/
-  # - default to 3.7
+  # - more conservative interpreter version (usually)
   # - set common environment vars
   default:
     parameters:
+      # This serves both as a 'local' variable and as as method for overriding
+      # in certain test cells (eg, main test suite matrix)
       version:
         type: string
-        default: "3.7"
+        default: "3.9"
     docker:
       - image: cimg/python:<< parameters.version >>
       # TODO: explicitly select 'resource_class: small' if credits ever become
@@ -26,7 +28,11 @@ executors:
       # least, as of 2025ish?) and will cause the "real" site-packages to omit
       # those packages, leading to subtle problems with subshells (like when
       # using sudo).
+      # TODO: this can /probably/ go away once use of uv is stable?
       PYTHONNOUSERSITE: "1"
+      # Not-in-CWD UV venv location (else all the tools have to be told to
+      # ignore it, sigh)
+      UV_PROJECT_ENVIRONMENT: "/home/circleci/venv"
       # So we get pretty output for some subcommands.
       TERM: screen-256color
 
@@ -36,20 +42,45 @@ commands:
   setup:
     steps:
       - checkout
+      # Debuggery - which uv is this container on?
+      - run: "which uv && uv --version"
+      # General Debuggery
+      - run: |
+          whoami ; echo
+          pwd ; echo
+          env|sort
+      # Explicitly generate uv venv w/ pip inside. (alas, uv sync doesn't
+      # accept this arg [yet?])
+      - run: |
+          pwd
+          uv venv --seed
       # This is worth using over a vanilla invocations task for 2 reasons:
       # - kinda hard to use invocations if it's not installed yet...
       # - the python orb is fully integrated with Circle's caching stuff
+      # NOTE: It should auto-detect UV from existence of `uv.lock`
       - python/install-packages:
-          # For now, we expect most Pythons 3.7-3.9+ to be happy with the
-          # same pile of dependencies, so this lets us reuse the cache
-          # across matrix cells.
+          args: "--verbose"
+          # For now, we expect most Pythons to be happy with the same pile of
+          # dependencies, so this lets us reuse the cache across matrix cells.
           include-python-in-cache-key: false
-          pre-install-steps:
-            # This must occur here and not as a regular step; otherwise
-            # cache loading stomps all over it and you get broken pip.
-            - run: pip install pip==24.0
-          pkg-manager: pip
-          pip-dependency-file: dev-requirements.txt
+          # Inform the caching layer where our venv is.
+          # TODO: can we ref $UV_PROJECT_ENVIRONMENT in here? unlikely??
+          # TODO: does circle have any sorta global-to-workflow variables we
+          # could use instead?
+          venv-path: '["/home/circleci/venv"]'
+          # TODO: if 3.2.0+ is fixed re: ability to use local exec, then we can
+          # use cache-folder-prefix here, depending on what the real default
+          # value is (it's either empty string - meaning pwd - or /tmp/cache)
+      # Safety check vs lockfile
+      - run: "uv tree"
+      # Set up for human interactive-like shell env re: venv path, etc,
+      # Use multiline string for easier quoting; ensure venv comes /first/ in
+      # case we override global commands like pip
+      - run: |
+          echo 'export PATH="$UV_PROJECT_ENVIRONMENT"/bin:"$PATH"' >> "$BASH_ENV"
+      # Finally, safety check helping prove new PATH works: do we see the
+      # seeded pip?
+      - run: which -a pip
 
   # "Wait around on errors" helper for circleci-cli local use
   debug:
@@ -59,7 +90,7 @@ commands:
           # Sleep for a very long time on failure, if opt-in env var set.
           # Necessary to keep circleci cli from nuking its containers :weary:
           # TODO: some non super nested way to get actual python version in use
-          command: "test -z \"$DEBUG\" || (\n\n###### RUN vvvv LOCALLY LMAO\n# docker exec -it $(docker container ls --filter ancestor=cimg/python:3.7 --format \"{{.ID}}\") bash\n######\n\nsleep 18000)"
+          command: "test -z \"$DEBUG\" || (\n\n###### RUN vvvv LOCALLY LMAO\n# docker exec -it $(docker container ls --filter ancestor=cimg/python:3.9 --format \"{{.ID}}\") bash\n######\n\nsleep 18000)"
           when: on_fail
           no_output_timeout: 5h
 
@@ -80,11 +111,6 @@ jobs:
       # Python interpreter version
       version:
         type: string
-      # Optional 'pip install' argstr for post-setup package tweaking,
-      # eg 'some-dependency==some-older-version test-dep==better-for-circle'
-      pip-overrides:
-        type: string
-        default: "" # evaluates falsey
       # For easier running eg integration tests w/ matrix-friendly setup
       task:
         type: string
@@ -94,11 +120,6 @@ jobs:
       version: "<< parameters.version >>"
     steps:
       - setup
-      - when:
-          condition: "<< parameters.pip-overrides >>"
-          steps:
-            # NOTE: eschewing python orb install-packages here, overkill/buggy
-            - run: "pip install << parameters.pip-overrides >>"
       - run: "inv << parameters.task >>"
       - debug
 
