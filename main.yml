@@ -111,6 +111,11 @@ jobs:
       # Python interpreter version
       version:
         type: string
+      # Some cells in matrices may want semi-arbitrary extra packages
+      # installed.
+      pip-overrides:
+        type: string
+        default: ""  # evaluates falsey
       # For easier running eg integration tests w/ matrix-friendly setup
       task:
         type: string
@@ -120,6 +125,11 @@ jobs:
       version: "<< parameters.version >>"
     steps:
       - setup
+      - when:
+          condition: "<< parameters.pip-overrides >>"
+          steps:
+            # NOTE: eschewing python orb install-packages here, overkill/buggy
+            - run: "pip install << parameters.pip-overrides >>"
       - run: "inv << parameters.task >>"
       - debug
 
