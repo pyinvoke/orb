@@ -57,8 +57,11 @@ commands:
       # This is worth using over a vanilla invocations task for 2 reasons:
       # - kinda hard to use invocations if it's not installed yet...
       # - the python orb is fully integrated with Circle's caching stuff
-      # NOTE: It should auto-detect UV from existence of `uv.lock`
       - python/install-packages:
+          # pkg-manager + venv-cache /might/ work around not wanting uv.lock in
+          # git?
+          pkg-manager: "uv"
+          venv-cache: false
           args: "--verbose"
           # For now, we expect most Pythons to be happy with the same pile of
           # dependencies, so this lets us reuse the cache across matrix cells.
