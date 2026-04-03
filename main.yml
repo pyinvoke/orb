@@ -106,6 +106,35 @@ commands:
       - run: coverage xml
       - codecov/upload
 
+  downstream:
+    description: Grab a downstream project and run its tests with ourselves installed
+    parameters:
+      git_url:
+        type: string
+      safety_check:
+        type: string
+      test_command:
+        type: string
+    steps:
+      # NOTE: no orb/setup, we don't want to 'set up' the host project's own
+      # env here! Doing so can confuse subprocesses within the downstream test
+      # suites, and it's not actually necessary, all we need is the checkout
+      # itself anyways.
+      - checkout
+      - run: |
+          git clone --depth 1 << parameters.git_url >> downstream
+          cd downstream
+          uv venv --seed venv
+          source venv/bin/activate
+          # TODO: make configurable or just make uv-forward once fabric's
+          # pyproject'd up
+          pip install -r dev-requirements.txt
+          pip install -e .
+          pip install -e ..
+          pip list
+          << parameters.safety_check >>
+          << parameters.test_command >>
+
 
 jobs:
 
