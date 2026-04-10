@@ -15,7 +15,7 @@ executors:
     parameters:
       version:
         type: string
-        default: "3.7"
+        default: "3.9"
     docker:
       - image: cimg/python:<< parameters.version >>
       # TODO: explicitly select 'resource_class: small' if credits ever become
@@ -34,14 +34,11 @@ commands:
       # - kinda hard to use invocations if it's not installed yet...
       # - the python orb is fully integrated with Circle's caching stuff
       - python/install-packages:
-          # For now, we expect most Pythons 3.7-3.9+ to be happy with the
-          # same pile of dependencies, so this lets us reuse the cache
-          # across matrix cells.
-          include-python-in-cache-key: false
+          include-python-in-cache-key: true
           pre-install-steps:
             # This must occur here and not as a regular step; otherwise
             # cache loading stomps all over it and you get broken pip.
-            - run: pip install pip==24.0
+            - run: pip install "pip~=25.0"
           pkg-manager: pip
           pip-dependency-file: dev-requirements.txt
 
